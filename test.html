@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Campus Lost & Found | CUCEK</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="fas fa-moon"></i></button>
+
+<div class="toast hidden" id="toast"><i class="fas fa-check-circle"></i><span id="toast-msg"></span></div>
+
+<!--LANDING PAGE-->
+<div class="page active" id="page-landing">
+  <nav>
+    <div class="nav-brand"><div class="icon">🔍</div>CUCEK Lost & Found</div>
+    <div class="nav-actions">
+      <button class="nav-pill" onclick="go('login')">Login</button>
+      <button class="nav-pill primary" onclick="go('register')">Register</button>
+    </div>
+  </nav>
+  <div class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-badge">🎓 Cochin University College of Engineering Kuttanad</div>
+    <h1>Smart Campus<br>Lost & Found System</h1>
+    <p>A centralized digital platform for students and staff to report, search, and claim lost items efficiently across campus.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary btn-lg" onclick="go('login')"><i class="fas fa-sign-in-alt"></i> Login</button>
+      <button class="btn btn-outline btn-lg" onclick="go('register')"><i class="fas fa-user-plus"></i> Register</button>
+    </div>
+    <div class="features">
+      <div class="feat"><div class="feat-icon"><i class="fas fa-search-location"></i></div><h4>Report Lost Items</h4><p>Quickly report lost items with details, location, and description.</p></div>
+      <div class="feat"><div class="feat-icon"><i class="fas fa-hand-holding"></i></div><h4>Submit Found Items</h4><p>Found something? Log it and help reunite items with their owners.</p></div>
+      <div class="feat"><div class="feat-icon"><i class="fas fa-file-alt"></i></div><h4>Submit Claims</h4><p>Identify your belongings and formally claim them through the system.</p></div>
+      <div class="feat"><div class="feat-icon"><i class="fas fa-shield-alt"></i></div><h4>Admin Oversight</h4><p>Full verification, audit logs, and claim management by administrators.</p></div>
+    <div class="feat"><div class="feat-icon"><i class="fas fa-camera-alt"></i></div><h4>Upload Item Images</h4><p>Users can upload items images for proper identification and verification.</p></div>
+    <div class="feat"><div class="feat-icon"><i class="fas fa-search"></i></div><h4>Search Suggestions</h4><p>Provide intelligent keyword-based search suggestions to help users to quickly locate lost and found belongings using various categories.</p></div>
+    
+    </div>
+    <div class="hero-descriptions">
+      <p>Every report is stored in MySQL, making item records, claim history, and admin decisions easy to track for an RDBMS project.</p>
+      <p>The system connects students, finders, and administrators through one workflow: report, browse, claim, verify, and resolve.</p>
+    </div>
+  </div>
+</div>
+
+<!--LOGIN PAGE-->
+<div class="page" id="page-login">
+  <nav>
+    <div class="nav-brand" onclick="go('landing')" style="cursor:pointer"><div class="icon">🔍</div>CUCEK Lost & Found</div>
+    <div class="nav-actions">
+      <button class="nav-pill" onclick="go('landing')"><i class="fas fa-home"></i> Home</button>
+    </div>
+  </nav>
+  <div style="min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;padding:2rem;background:radial-gradient(ellipse at center,rgba(79,142,247,.06) 0%,transparent 70%)">
+    <div class="card" style="width:100%;max-width:400px">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:36px;margin-bottom:10px">🔐</div>
+        <h2 style="font-size:1.3rem;font-weight:600">Welcome back</h2>
+        <p style="font-size:13px;color:var(--text2);margin-top:4px">Sign in to your account</p>
+      </div>
+      <div class="form-group"><label>Email Address</label><input type="email" id="login-email" placeholder="student@cucek.ac.in"></div>
+      <div class="form-group"><label>Password</label><div class="password-wrap"><input type="password" id="login-password" placeholder="••••••••"><button type="button" class="password-toggle" onclick="togglePassword('login-password', this)" title="Show password"><i class="fas fa-eye"></i></button></div></div>
+      <div style="margin-bottom:16px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);cursor:pointer">
+          <input type="checkbox" id="login-admin" style="width:auto"> Login as Administrator
+        </label>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> Login</button>
+      <p style="text-align:center;font-size:13px;color:var(--text2);margin-top:16px">No account? <a href="#" onclick="go('register')" style="color:var(--accent)">Register here</a></p>
+      
+    </div>
+  </div>
+</div>
+
+<!--REGISTER PAGE-->
+<div class="page" id="page-register">
+  <nav>
+    <div class="nav-brand" onclick="go('landing')" style="cursor:pointer"><div class="icon">🔍</div>CUCEK Lost & Found</div>
+    <div class="nav-actions">
+      <button class="nav-pill" onclick="go('login')">Login</button>
+    </div>
+  </nav>
+  <div style="min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;padding:2rem">
+    <div class="card" style="width:100%;max-width:440px">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:36px;margin-bottom:10px">📝</div>
+        <h2 style="font-size:1.3rem;font-weight:600">Create Account</h2>
+        <p style="font-size:13px;color:var(--text2);margin-top:4px">Join the campus lost & found portal</p>
+      </div>
+      <div class="form-group"><label>Full Name</label><input id="reg-name" placeholder="Enter your full name"></div>
+      <div class="form-group"><label>Email Address</label><input type="email" id="reg-email" placeholder="your.email@cucek.ac.in" pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" title="Enter a valid email address, for example name@example.com" required></div>
+      <div class="form-group"><label>Student / Staff ID</label><input type="number" id="reg-id" placeholder="e.g. 24102535"></div>
+      <div class="form-group"><label>Department</label>
+        <select id="reg-dept">
+          <option value="">Select Department</option>
+          <option>Information Technology</option>
+          <option>Computer Science</option>
+          <option>Electronics & Communication</option>
+          <option>Mechanical Engineering</option>
+          <option>Civil Engineering</option>
+          <option>Staff</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Role</label>
+        <select id="reg-role">
+          <option value="student">Student</option>
+          <option value="teacher">Teacher / Staff</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Password</label><div class="password-wrap"><input type="password" id="reg-pass" placeholder="Minimum 6 characters"><button type="button" class="password-toggle" onclick="togglePassword('reg-pass', this)" title="Show password"><i class="fas fa-eye"></i></button></div></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doRegister()"><i class="fas fa-user-plus"></i> Create Account</button>
+      <p style="text-align:center;font-size:13px;color:var(--text2);margin-top:16px">Already registered? <a href="#" onclick="go('login')" style="color:var(--accent)">Login here</a></p>
+    </div>
+  </div>
+</div>
+
+<!--USER DASHBOARD-->
+<div class="page" id="page-dashboard">
+  <nav>
+    <div class="nav-brand"><div class="icon">🔍</div>Lost & Found Portal</div>
+    <div class="nav-actions">
+      <button class="nav-pill" onclick="go('dashboard')"><i class="fas fa-home"></i> Dashboard</button>
+      <button class="nav-pill" onclick="go('browse')"><i class="fas fa-search"></i> Browse</button>
+      <button class="nav-pill" onclick="go('my-reports')"><i class="fas fa-file-alt"></i> My Reports</button>
+      <div class="avatar-circle" id="dash-avatar">U</div><button class="nav-pill" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </nav>
+  <div class="page-header">
+    <div class="page-title">Welcome, <span id="dash-name">User</span> 👋</div>
+    <div class="page-sub">What would you like to do today?</div>
+  </div>
+  <div class="page-body">
+    <div id="found-message-list"></div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="stat-lost">0</div><div class="stat-label">Lost Items Reported</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-found">0</div><div class="stat-label">Found Items Reported</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-claims">0</div><div class="stat-label">Claims Submitted</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total Items in System</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
+      <div class="card" style="cursor:pointer;border:1px solid rgba(79,142,247,.3);background:rgba(79,142,247,.06)" onclick="go('report-lost')">
+        <div style="font-size:32px;margin-bottom:12px">📋</div>
+        <div style="font-weight:600;font-size:1rem;margin-bottom:6px">Report Lost Item</div>
+        <div style="font-size:13px;color:var(--text2)">Lost something on campus? Report it with details and location.</div>
+        <div style="margin-top:16px"><span style="color:var(--accent);font-size:13px;font-weight:500">Report now →</span></div>
+      </div>
+      <div class="card" style="cursor:pointer;border:1px solid rgba(34,211,160,.3);background:rgba(34,211,160,.06)" onclick="go('report-found')">
+        <div style="font-size:32px;margin-bottom:12px">🤲</div>
+        <div style="font-weight:600;font-size:1rem;margin-bottom:6px">Report Found Item</div>
+        <div style="font-size:13px;color:var(--text2)">Found something? Help others by reporting it here.</div>
+        <div style="margin-top:16px"><span style="color:var(--accent2);font-size:13px;font-weight:500">Report now →</span></div>
+      </div>
+      <div class="card" style="cursor:pointer;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.06)" onclick="go('browse')">
+        <div class="action-icon"><i class="fas fa-file-signature"></i></div>
+        <div style="font-weight:600;font-size:1rem;margin-bottom:6px">Submit Claims</div>
+        <div style="font-size:13px;color:var(--text2)">Browse found items and submit an ownership claim with proof details.</div>
+        <div style="margin-top:16px"><span style="color:var(--warn);font-size:13px;font-weight:500">Browse items →</span></div>
+      </div>
+      <div class="card" style="cursor:pointer" onclick="go('my-reports')">
+        <div style="font-size:32px;margin-bottom:12px">📊</div>
+        <div style="font-weight:600;font-size:1rem;margin-bottom:6px">My Reports & Claims</div>
+        <div style="font-size:13px;color:var(--text2)">Track the status of your reports and claim requests.</div>
+        <div style="margin-top:16px"><span style="color:var(--text2);font-size:13px;font-weight:500">View history →</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!--REPORT LOST-->
+<div class="page" id="page-report-lost">
+  <nav>
+    <div class="nav-brand"><div class="icon">🔍</div>Lost & Found Portal</div>
+    <div class="nav-actions">
+      <button class="nav-pill" onclick="go('dashboard')">← Back</button>
+      <div class="avatar-circle" id="rl-avatar">U</div><button class="nav-pill" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </nav>
+  <div class="page-header">
+    <div class="page-title">📋 Report Lost Item</div>
+    <div class="page-sub">Fill in the details of your lost item</div>
+  </div>
+  <div class="page-body" style="max-width:600px">
+    <div class="card">
+      <div class="form-group"><label>Item Name *</label><input id="rl-name" placeholder="e.g. Black wallet"></div>
+      <div class="form-group"><label>Category *</label>
+        <select id="rl-cat">
+          <option value="">Select category</option>
+          <option>Wallet</option><option>Phone</option><option>Bag</option>
+          <option>Laptop</option><option>Books</option><option>USB Drive</option>
+          <option>Keys</option><option>ID Card</option><option>Others</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Description</label><textarea id="rl-desc" placeholder="Describe the item — color, brand, any identifying marks..."></textarea></div>
+      <div class="form-group"><label>Keywords (comma separated)</label><input id="rl-keywords" placeholder="e.g. leather, brown, bifold"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label>Date Lost *</label><input type="date" id="rl-date"></div>
+        <div class="form-group"><label>Last Known Location *</label><input id="rl-location" placeholder="e.g. Library 2nd floor"></div>
+      </div>
+      <div class="form-group"><label>Upload Image (optional)</label><input type="file" id="rl-image" accept="image/*"></div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn btn-primary" onclick="submitLost()"><i class="fas fa-paper-plane"></i> Submit Report</button>
+        <button class="btn btn-outline" onclick="go('dashboard')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--REPORT FOUND-->
+<div class="page" id="page-report-found">
+  <nav>
+    <div class="nav-brand"><div class="icon">🔍</div>Lost & Found Portal</div>
+    <div class="nav-actions">
+      <button class="nav-pill" onclick="go('dashboard')">← Back</button>
+      <div class="avatar-circle" id="rf-avatar">U</div><button class="nav-pill" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </nav>
+  <div class="page-header">
+    <div class="page-title">🤲 Report Found Item</div>
+    <div class="page-sub">Help someone find their lost item</div>
+  </div>
+  <div class="page-body" style="max-width:600px">
+    <div class="card">
+      <div class="form-group"><label>Item Name *</label><input id="rf-name" placeholder="e.g. Blue water bottle"></div>
+      <div class="form-group"><label>Category *</label>
+        <select id="rf-cat">
+          <option value="">Select category</option>
+          <option>Wallet</option><option>Phone</option><option>Bag</option>
+          <option>Laptop</option><option>Books</option><option>USB Drive</option>
+          <option>Keys</option><option>ID Card</option><option>Others</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Description</label><textarea id="rf-desc" placeholder="Describe the item — color, brand, condition..."></textarea></div>
+      <div class="form-group"><label>Keywords (comma separated)</label><input id="rf-keywords" placeholder="e.g. blue, plastic, CUCEK sticker"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label>Date Found *</label><input type="date" id="rf-date"></div>
+        <div class="form-group"><label>Location Found *</label><input id="rf-location" placeholder="e.g. Canteen area"></div>
+      </div>
+      <div class="form-group"><label>Upload Image (optional)</label><input type="file" id="rf-image" accept="image/*"></div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn btn-success" onclick="submitFound()"><i class="fas fa-paper-plane"></i> Submit Report</button>
+        <button class="btn btn-outline" onclick="go('dashboard')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--BROWSE FOUND ITEMS-->
+<div class="page" id="page-browse">
+  <nav>
+    <div class="nav-brand"><div class="icon">🔍</div>Lost & Found Portal</div>
+    <div class="nav-actions">
+      <button class="nav-pill" onclick="go('dashboard')">← Dashboard</button>
+      <div class="avatar-circle" id="br-avatar">U</div><button class="nav-pill" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </nav>
+  <div class="page-header">
+    <div class="page-title">🔍 Browse Found Items</div>
+    <div class="page-sub">Search through items others have turned in</div>
+  </div>
+  <div class="page-body">
+    <div class="search-bar">
+      <input id="browse-search" placeholder="Search by name, category, location..." oninput="renderBrowse()">
+      <select id="browse-cat" onchange="renderBrowse()" style="width:auto;min-width:160px">
+        <option value="">All Categories</option>
+        <option>Wallet</option><option>Phone</option><option>Bag</option>
+        <option>Laptop</option><option>Books</option><option>USB Drive</option>
+        <option>Keys</option><option>ID Card</option><option>Others</option>
+      </select>
+      <select id="browse-status" onchange="renderBrowse()" style="width:auto;min-width:140px">
+        <option value="">All Status</option>
+        <option value="Available">Available</option>
+        <option value="Claimed">Claimed</option>
+      </select>
+    </div>
+    <div class="items-grid" id="browse-grid"></div>
+  </div>
+</div>
+
+<!--MY REPORTS-->
+<div class="page" id="page-my-reports">
+  <nav>
+    <div class="nav-brand"><div class="icon">🔍</div>Lost & Found Portal</div>
+    <div class="nav-actions">
+      <button class="nav-pill" onclick="go('dashboard')">← Dashboard</button>
+      <div class="avatar-circle" id="mr-avatar">U</div><button class="nav-pill" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </nav>
+  <div class="page-header">
+    <div class="page-title">📊 My Reports & Claims</div>
+    <div class="page-sub">Track all your submitted reports and claim requests</div>
+  </div>
+  <div class="page-body">
+    <div id="my-match-list"></div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'lost-tab')">Lost Items Reported</button>
+      <button class="tab-btn" onclick="switchTab(this,'found-tab')">Found Items Reported</button>
+      <button class="tab-btn" onclick="switchTab(this,'claims-tab')">My Claims</button>
+    </div>
+    <div class="tab-pane active" id="lost-tab">
+      <div class="table-wrap"><table><thead><tr><th>Item</th><th>Category</th><th>Location</th><th>Date Lost</th><th>Status</th><th>Actions</th></tr></thead><tbody id="my-lost-body"></tbody></table></div>
+    </div>
+    <div class="tab-pane" id="found-tab">
+      <div class="table-wrap"><table><thead><tr><th>Item</th><th>Category</th><th>Location</th><th>Date Found</th><th>Status</th></tr></thead><tbody id="my-found-body"></tbody></table></div>
+    </div>
+    <div class="tab-pane" id="claims-tab">
+      <div class="table-wrap"><table><thead><tr><th>Item Claimed</th><th>Claim Date</th><th>Proof Image</th><th>Details</th><th>Status</th></tr></thead><tbody id="my-claims-body"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!--ADMIN PANEL-->
+<div class="page" id="page-admin">
+  <nav>
+    <div class="nav-brand"><div class="icon">⚙️</div>Admin Panel <span class="admin-badge" style="margin-left:8px">ADMIN</span></div>
+    <div class="nav-actions">
+      <button class="nav-pill" onclick="go('admin')">Dashboard</button>
+      <button class="nav-pill" onclick="go('admin-claims')">Claims</button>
+      <button class="nav-pill" onclick="go('admin-users')">Users</button>
+      <button class="nav-pill" onclick="go('admin-logs')">Audit Logs</button>
+      <button class="nav-pill" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+  <div class="page-header">
+    <div class="page-title">Admin Dashboard</div>
+    <div class="page-sub">System overview and management</div>
+  </div>
+  <div class="page-body">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="a-stat-users" style="color:var(--accent)">0</div><div class="stat-label">Registered Users</div></div>
+      <div class="stat-card"><div class="stat-num" id="a-stat-lost" style="color:var(--danger)">0</div><div class="stat-label">Lost Items</div></div>
+      <div class="stat-card"><div class="stat-num" id="a-stat-found" style="color:var(--accent2)">0</div><div class="stat-label">Found Items</div></div>
+      <div class="stat-card"><div class="stat-num" id="a-stat-claims" style="color:var(--warn)">0</div><div class="stat-label">Pending Claims</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:16px">All Lost Items</div>
+        <div class="table-wrap"><table><thead><tr><th>Item</th><th>Reporter</th><th>Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="admin-lost-body"></tbody></table></div>
+      </div>
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:16px">All Found Items</div>
+        <div class="table-wrap"><table><thead><tr><th>Item</th><th>Reporter</th><th>Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="admin-found-body"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--ADMIN CLAIMS-->
+<div class="page" id="page-admin-claims">
+  <nav>
+    <div class="nav-brand"><div class="icon">⚙️</div>Admin Panel <span class="admin-badge" style="margin-left:8px">ADMIN</span></div>
+    <div class="nav-actions">
+      <button class="nav-pill" onclick="go('admin')">Dashboard</button>
+      <button class="nav-pill" onclick="go('admin-claims')">Claims</button>
+      <button class="nav-pill" onclick="go('admin-users')">Users</button>
+      <button class="nav-pill" onclick="go('admin-logs')">Audit Logs</button>
+      <button class="nav-pill" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+  <div class="page-header">
+    <div class="page-title">📋 Claim Management</div>
+    <div class="page-sub">Review and approve or reject claim requests</div>
+  </div>
+  <div class="page-body">
+    <div class="table-wrap">
+      <table><thead><tr><th>Claim ID</th><th>Item</th><th>Claimant</th><th>Proof Image</th><th>Claim Details</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="admin-claims-body"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!--ADMIN USERS-->
+<div class="page" id="page-admin-users">
+  <nav>
+    <div class="nav-brand"><div class="icon">⚙️</div>Admin Panel <span class="admin-badge" style="margin-left:8px">ADMIN</span></div>
+    <div class="nav-actions">
+      <button class="nav-pill" onclick="go('admin')">Dashboard</button>
+      <button class="nav-pill" onclick="go('admin-claims')">Claims</button>
+      <button class="nav-pill" onclick="go('admin-users')">Users</button>
+      <button class="nav-pill" onclick="go('admin-logs')">Audit Logs</button>
+      <button class="nav-pill" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+  <div class="page-header">
+    <div class="page-title">👥 User Management</div>
+    <div class="page-sub">Manage registered users</div>
+  </div>
+  <div class="page-body">
+    <div class="table-wrap">
+      <table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Department</th><th>Role</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody id="admin-users-body"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!--ADMIN LOGS-->
+<div class="page" id="page-admin-logs">
+  <nav>
+    <div class="nav-brand"><div class="icon">⚙️</div>Admin Panel <span class="admin-badge" style="margin-left:8px">ADMIN</span></div>
+    <div class="nav-actions">
+      <button class="nav-pill" onclick="go('admin')">Dashboard</button>
+      <button class="nav-pill" onclick="go('admin-claims')">Claims</button>
+      <button class="nav-pill" onclick="go('admin-users')">Users</button>
+      <button class="nav-pill" onclick="go('admin-logs')">Audit Logs</button>
+      <button class="nav-pill" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+  <div class="page-header">
+    <div class="page-title">📜 Audit Logs</div>
+    <div class="page-sub">Chronological record of all system events</div>
+  </div>
+  <div class="page-body">
+    <div class="card" id="audit-log-container" style="padding:0">
+      <div style="padding:20px" id="audit-log-inner"></div>
+    </div>
+  </div>
+</div>
+
+<!--CLAIM MODAL-->
+<div class="modal-overlay" id="claim-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('claim-modal')">✕</button>
+    <h3 style="font-size:1.1rem;font-weight:600;margin-bottom:16px">📝 Submit Ownership Claim</h3>
+    <div class="claim-info" id="claim-item-info"></div>
+    <div class="form-group"><label>Claim Details *</label><textarea id="claim-details" placeholder="Describe how you can prove this is yours — purchase receipt, unique markings, photos, etc."></textarea></div>
+    <div class="form-group"><label>Upload Proof Image (optional)</label><input type="file" id="claim-image" accept="image/*"></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-primary" onclick="submitClaim()"><i class="fas fa-paper-plane"></i> Submit Claim</button>
+      <button class="btn btn-outline" onclick="closeModal('claim-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!--ITEM DETAIL MODAL-->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal-box" style="max-width:520px">
+    <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
