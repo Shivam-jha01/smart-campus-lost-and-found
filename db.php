@@ -1,9 +1,10 @@
 <?php
-$host = 'tokaido.proxy.rlwy.net';
-$port = 48444;
-$dbname = 'railway';
-$username = 'root';
-$password = 'ZMXEmORaWFLpPHSSmjMNKYEIMLHqwvnH';
+
+$host = getenv('MYSQLHOST') ?: 'tokaido.proxy.rlwy.net';
+$port = getenv('MYSQLPORT') ?: 48444;
+$dbname = getenv('MYSQLDATABASE') ?: 'railway';
+$username = getenv('MYSQLUSER') ?: 'root';
+$password = getenv('MYSQLPASSWORD') ?: 'YOUR_PASSWORD';
 
 try {
     $pdo = new PDO(
@@ -16,7 +17,5 @@ try {
         ]
     );
 } catch (PDOException $e) {
-    http_response_code(500);
     die("Database connection failed: " . $e->getMessage());
 }
-?>
