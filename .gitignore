@@ -2,3 +2,7 @@ cookie.txt
 *.log
 .DS_Store
 Thumbs.db
+
+# Local uploads and Vercel local cache directories
+uploads/*
+.vercel/

@@ -1,0 +1,9 @@
+# Files to ignore from Vercel deployments
+database.sql
+uploads/
+.git/
+.gitignore
+README.md
+task.md
+walkthrough.md
+implementation_plan.md

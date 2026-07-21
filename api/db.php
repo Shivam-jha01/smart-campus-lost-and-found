@@ -4,7 +4,7 @@ $host = getenv('MYSQLHOST') ?: 'tokaido.proxy.rlwy.net';
 $port = getenv('MYSQLPORT') ?: 48444;
 $dbname = getenv('MYSQLDATABASE') ?: 'railway';
 $username = getenv('MYSQLUSER') ?: 'root';
-$password = getenv('MYSQLPASSWORD') ?: 'YOUR_PASSWORD';
+$password = getenv('MYSQLPASSWORD') ?: 'ZMXEmORaWFLpPHSSmjMNKYEIMLHqwvnH';
 
 try {
     $pdo = new PDO(
