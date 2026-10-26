@@ -328,8 +328,12 @@ function item_match_score($lost, $found) {
 
 function possible_found_matches($lost, $excludeUserId = null, $limit = 5) {
     global $pdo;
-    $st = $pdo->prepare('SELECT * FROM found_items WHERE status = \'Available\' AND (? IS NULL OR user_id <> ?) ORDER BY id DESC LIMIT 100');
-    $st->execute([$excludeUserId, $excludeUserId]);
+    if ($excludeUserId !== null) {
+        $st = $pdo->prepare('SELECT * FROM found_items WHERE status = \'Available\' AND user_id <> ? ORDER BY id DESC LIMIT 100');
+        $st->execute([$excludeUserId]);
+    } else {
+        $st = $pdo->query('SELECT * FROM found_items WHERE status = \'Available\' ORDER BY id DESC LIMIT 100');
+    }
     $matches = [];
     foreach ($st->fetchAll() as $found) {
         $m = item_match_score($lost, $found);
@@ -348,8 +352,12 @@ function possible_found_matches($lost, $excludeUserId = null, $limit = 5) {
 
 function possible_lost_matches($found, $excludeUserId = null, $limit = 20) {
     global $pdo;
-    $st = $pdo->prepare('SELECT * FROM lost_items WHERE status = \'Active\' AND (? IS NULL OR user_id <> ?) ORDER BY id DESC LIMIT 100');
-    $st->execute([$excludeUserId, $excludeUserId]);
+    if ($excludeUserId !== null) {
+        $st = $pdo->prepare('SELECT * FROM lost_items WHERE status = \'Active\' AND user_id <> ? ORDER BY id DESC LIMIT 100');
+        $st->execute([$excludeUserId]);
+    } else {
+        $st = $pdo->query('SELECT * FROM lost_items WHERE status = \'Active\' ORDER BY id DESC LIMIT 100');
+    }
     $matches = [];
     foreach ($st->fetchAll() as $lost) {
         $m = item_match_score($lost, $found);
