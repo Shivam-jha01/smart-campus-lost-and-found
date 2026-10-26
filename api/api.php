@@ -12,7 +12,9 @@ global $pdo, $dbDriver;
 
 // Fast schema check - runs only if database is not initialized yet
 if (!Schema::isInitialized($pdo)) {
-    Schema::initialize($pdo, $dbDriver);
+    Schema::initialize($pdo);
+} else {
+    Schema::ensureMigrations($pdo);
 }
 
 $action = $_GET['action'] ?? '';
@@ -129,24 +131,17 @@ function need_admin() {
 }
 
 function insert_and_get_id($table, array $data) {
-    global $pdo, $dbDriver;
+    global $pdo;
     $cols = array_keys($data);
     $placeholders = array_fill(0, count($cols), '?');
     $colList = implode(', ', $cols);
     $phList = implode(', ', $placeholders);
     $values = array_values($data);
 
-    if ($dbDriver === 'pgsql') {
-        $sql = "INSERT INTO {$table} ({$colList}) VALUES ({$phList}) RETURNING id";
-        $st = $pdo->prepare($sql);
-        $st->execute($values);
-        return (int)$st->fetchColumn();
-    } else {
-        $sql = "INSERT INTO {$table} ({$colList}) VALUES ({$phList})";
-        $st = $pdo->prepare($sql);
-        $st->execute($values);
-        return (int)$pdo->lastInsertId();
-    }
+    $sql = "INSERT INTO {$table} ({$colList}) VALUES ({$phList}) RETURNING id";
+    $st = $pdo->prepare($sql);
+    $st->execute($values);
+    return (int)$st->fetchColumn();
 }
 
 function log_action($a, $d, $uid = null) {
@@ -370,17 +365,11 @@ function possible_lost_matches($found, $excludeUserId = null, $limit = 20) {
 }
 
 function save_match_notification($userId, $lostItemId, $foundItemId, $score, $reason) {
-    global $pdo, $dbDriver;
-    if ($dbDriver === 'pgsql') {
-        $sql = 'INSERT INTO item_match_notifications (user_id, lost_item_id, found_item_id, match_score, match_reason) 
-                VALUES (?, ?, ?, ?, ?) 
-                ON CONFLICT (user_id, lost_item_id, found_item_id) 
-                DO UPDATE SET match_score = EXCLUDED.match_score, match_reason = EXCLUDED.match_reason, created_at = CURRENT_TIMESTAMP';
-    } else {
-        $sql = 'INSERT INTO item_match_notifications (user_id, lost_item_id, found_item_id, match_score, match_reason) 
-                VALUES (?, ?, ?, ?, ?) 
-                ON DUPLICATE KEY UPDATE match_score = VALUES(match_score), match_reason = VALUES(match_reason), created_at = CURRENT_TIMESTAMP';
-    }
+    global $pdo;
+    $sql = 'INSERT INTO item_match_notifications (user_id, lost_item_id, found_item_id, match_score, match_reason) 
+            VALUES (?, ?, ?, ?, ?) 
+            ON CONFLICT (user_id, lost_item_id, found_item_id) 
+            DO UPDATE SET match_score = EXCLUDED.match_score, match_reason = EXCLUDED.match_reason, created_at = CURRENT_TIMESTAMP';
     $st = $pdo->prepare($sql);
     $st->execute([$userId, $lostItemId, $foundItemId, $score, $reason]);
 }
@@ -638,8 +627,7 @@ try {
             $params[] = $status;
         }
         if ($search !== '') {
-            $like = $dbDriver === 'pgsql' ? 'ILIKE' : 'LIKE';
-            $conditions[] = "(item_name {$like} ? OR category {$like} ? OR location {$like} ? OR description {$like} ?)";
+            $conditions[] = "(item_name ILIKE ? OR category ILIKE ? OR location ILIKE ? OR description ILIKE ?)";
             $term = '%' . $search . '%';
             $params[] = $term;
             $params[] = $term;

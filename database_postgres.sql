@@ -1,4 +1,5 @@
 -- Schema for Vercel Postgres / Neon PostgreSQL
+-- CUCEK Smart Campus Lost & Found System
 
 DROP TABLE IF EXISTS audit_logs CASCADE;
 DROP TABLE IF EXISTS item_match_notifications CASCADE;
@@ -42,7 +43,7 @@ CREATE TABLE lost_items (
   category VARCHAR(50) NOT NULL,
   description TEXT,
   keywords VARCHAR(255),
-  image_path VARCHAR(255),
+  image_path TEXT,
   date_lost DATE NOT NULL,
   location VARCHAR(150) NOT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'Active',
@@ -57,7 +58,7 @@ CREATE TABLE found_items (
   category VARCHAR(50) NOT NULL,
   description TEXT,
   keywords VARCHAR(255),
-  image_path VARCHAR(255),
+  image_path TEXT,
   date_found DATE NOT NULL,
   location VARCHAR(150) NOT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'Available',
@@ -72,7 +73,7 @@ CREATE TABLE claims (
   user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   user_name VARCHAR(100) NOT NULL,
   details TEXT NOT NULL,
-  image_path VARCHAR(255),
+  image_path TEXT,
   status VARCHAR(20) NOT NULL DEFAULT 'Pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -107,21 +108,30 @@ CREATE TABLE email_notifications (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS idx_lost_items_user ON lost_items(user_id);
+CREATE INDEX IF NOT EXISTS idx_found_items_user ON found_items(user_id);
+CREATE INDEX IF NOT EXISTS idx_claims_user ON claims(user_id);
+CREATE INDEX IF NOT EXISTS idx_claims_item ON claims(item_id);
+CREATE INDEX IF NOT EXISTS idx_match_user ON item_match_notifications(user_id);
+
 -- Seed Initial Data
 INSERT INTO users (name, email, password, uid, dept, role, status, is_admin) VALUES
-('Demo User', 'user@demo.com', 'password', '24102535', 'Information Technology', 'student', 'active', 0);
+('Demo User', 'user@demo.com', '$2y$10$w8uMlhb9eLhE7qL0eK78h.UeWvLgZkpF.e34u6z2O90325dJz8u8G', '24102535', 'Information Technology', 'student', 'active', 0);
 
 INSERT INTO admins (name, email, password, uid, dept, role, status) VALUES
-('Admin User', 'admin@demo.com', 'admin123', 'ADMIN001', 'Administration', 'admin', 'active');
+('Admin User', 'admin@demo.com', '$2y$10$w8uMlhb9eLhE7qL0eK78h.UeWvLgZkpF.e34u6z2O90325dJz8u8G', 'ADMIN001', 'Administration', 'admin', 'active');
 
 INSERT INTO found_items (user_id, user_name, item_name, category, description, keywords, date_found, location, status) VALUES
 (1, 'Demo User', 'Samsung Galaxy S22', 'Phone', 'A black Samsung phone with cracked screen protector', 'phone samsung black', '2026-05-12', 'Library Block', 'Available'),
 (1, 'Demo User', 'Brown Leather Wallet', 'Wallet', 'Contains ID cards and some cash', 'wallet brown leather', '2026-05-14', 'Canteen', 'Available'),
-(1, 'Demo User', 'Blue Backpack', 'Bag', 'Adidas bag with laptop compartment', 'bag blue adidas', '2026-05-15', 'Seminar Hall', 'Available');
+(1, 'Demo User', 'Blue Backpack', 'Bag', 'Adidas bag with laptop compartment', 'bag blue adidas', '2026-05-15', 'Seminar Hall', 'Available'),
+(1, 'Demo User', 'Dell Laptop Bag', 'Laptop', 'Black bag with charger inside', 'dell laptop charger', '2026-05-17', 'IT Lab', 'Available'),
+(1, 'Demo User', 'Engineering Drawing Book', 'Books', 'Has name written inside cover', 'drawing book', '2026-05-18', 'Sports Ground', 'Available');
 
 INSERT INTO lost_items (user_id, user_name, item_name, category, description, keywords, date_lost, location, status) VALUES
 (1, 'Demo User', 'iPhone 14 Pro', 'Phone', 'Space grey, has CUCEK sticker on back', 'iphone grey sticker', '2026-05-11', 'Library Block', 'Active'),
-(1, 'Demo User', 'Blue Water Bottle', 'Others', '1 litre Nalgene bottle', 'blue bottle', '2026-05-13', 'Canteen', 'Active');
+(1, 'Demo User', 'Blue Water Bottle', 'Others', '1 litre Nalgene bottle', 'blue bottle', '2026-05-13', 'Canteen', 'Active'),
+(1, 'Demo User', 'Student ID Card', 'ID Card', 'Laminated CUCEK ID', 'id card student', '2026-05-16', 'Seminar Hall', 'Active');
 
 INSERT INTO audit_logs (user_id, action, description) VALUES
-(NULL, 'SYSTEM', 'Demo data initialized');
+(NULL, 'SYSTEM', 'PostgreSQL database initialized successfully');
