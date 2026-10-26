@@ -88,10 +88,81 @@ class Database {
             $dsn = "pgsql:host={$host};port={$port};dbname={$db};sslmode={$sslmode}";
         }
 
-        try {
-            $this->pdo = new PDO($dsn, $user, $pass, $options);
-        } catch (PDOException $e) {
-            throw new Exception("PostgreSQL connection failed: " . $e->getMessage(), (int)$e->getCode(), $e);
+        // Extract Neon compute endpoint ID for libpq runtimes lacking TLS SNI
+        $endpointId = getenv('POSTGRES_ENDPOINT_ID') ?: getenv('PGENDPOINT') ?: '';
+        if (empty($endpointId) && isset($parts['query'])) {
+            if (preg_match('/endpoint(?:%3D|=)([a-z0-9\-]+)/i', $parts['query'], $qm)) {
+                $endpointId = $qm[1];
+            }
+        }
+        if (empty($endpointId)) {
+            if (preg_match('/^(ep-[a-z0-9\-]+?)(-pooler)?(\.|$)/i', $host, $m)) {
+                $endpointId = $m[1];
+            } elseif (strpos($host, 'neon.tech') !== false) {
+                $firstPart = explode('.', $host)[0];
+                $endpointId = preg_replace('/-pooler$/i', '', $firstPart);
+            }
+        }
+
+        // Build list of connection candidate strategies
+        $candidates = [];
+
+        if (!empty($endpointId)) {
+            // Neon Workaround 1: DSN options parameter (URL encoded)
+            $candidates[] = [
+                'dsn'  => "pgsql:host={$host};port={$port};dbname={$db};sslmode={$sslmode};options=endpoint%3D{$endpointId}",
+                'user' => $user,
+                'pass' => $pass,
+                'desc' => "DSN with options=endpoint%3D{$endpointId}"
+            ];
+
+            // Neon Workaround 2: Password prefix with semicolon (Neon proxy level routing)
+            if (!empty($pass) && strpos($pass, 'endpoint=') !== 0) {
+                $candidates[] = [
+                    'dsn'  => "pgsql:host={$host};port={$port};dbname={$db};sslmode={$sslmode}",
+                    'user' => $user,
+                    'pass' => "endpoint={$endpointId};{$pass}",
+                    'desc' => "Password prefix with semicolon"
+                ];
+                // Neon Workaround 3: Password prefix with dollar sign
+                $candidates[] = [
+                    'dsn'  => "pgsql:host={$host};port={$port};dbname={$db};sslmode={$sslmode}",
+                    'user' => $user,
+                    'pass' => "endpoint={$endpointId}\${$pass}",
+                    'desc' => "Password prefix with dollar"
+                ];
+            }
+
+            // Neon Workaround 4: DSN options parameter with single quotes (libpq key=value style)
+            $candidates[] = [
+                'dsn'  => "pgsql:host={$host};port={$port};dbname={$db};sslmode={$sslmode};options='endpoint={$endpointId}'",
+                'user' => $user,
+                'pass' => $pass,
+                'desc' => "DSN with options='endpoint={$endpointId}'"
+            ];
+        }
+
+        // Standard connection without endpoint options (works for native SNI or non-Neon Postgres)
+        $candidates[] = [
+            'dsn'  => "pgsql:host={$host};port={$port};dbname={$db};sslmode={$sslmode}",
+            'user' => $user,
+            'pass' => $pass,
+            'desc' => "Standard DSN"
+        ];
+
+        $lastException = null;
+        foreach ($candidates as $cand) {
+            try {
+                $this->pdo = new PDO($cand['dsn'], $cand['user'], $cand['pass'], $options);
+                break;
+            } catch (PDOException $e) {
+                $lastException = $e;
+                continue;
+            }
+        }
+
+        if ($this->pdo === null && $lastException !== null) {
+            throw new Exception("PostgreSQL connection failed: " . $lastException->getMessage(), (int)$lastException->getCode(), $lastException);
         }
     }
 }
