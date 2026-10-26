@@ -12,7 +12,16 @@ async function api(action, data = {}) {
     headers,
     body: JSON.stringify(data)
   });
-  const json = await res.json().catch(() => ({ ok: false, message: 'Invalid server response' }));
+  let json;
+  try {
+    json = await res.json();
+  } catch (err) {
+    let msg = 'Invalid server response';
+    if (res.status === 500) msg = 'Server error (500). Please check database connection in your environment variables.';
+    else if (res.status === 404) msg = 'API endpoint not found (404).';
+    else if (!res.ok) msg = `Server error HTTP ${res.status}`;
+    json = { ok: false, message: msg };
+  }
   if (!res.ok || !json.ok) throw new Error(json.message || 'Request failed');
   return json;
 }

@@ -92,7 +92,7 @@ function verify_token($token) {
     return $payload;
 }
 
-function get_current_user() {
+function get_auth_user() {
     $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
     if (!$auth && function_exists('apache_request_headers')) {
         $headers = apache_request_headers();
@@ -117,7 +117,7 @@ function get_current_user() {
 }
 
 function need_user() {
-    $u = get_current_user();
+    $u = get_auth_user();
     if (empty($u)) fail('Please login first', 401);
     return $u;
 }
@@ -441,7 +441,7 @@ function save_item_image($data, $prefix) {
 
 try {
     if ($action === 'session') {
-        $u = get_current_user();
+        $u = get_auth_user();
         ok(['user' => $u ?: null]);
     }
 
@@ -547,7 +547,7 @@ try {
     }
 
     if ($action === 'logout') {
-        $u = get_current_user();
+        $u = get_auth_user();
         if ($u) {
             log_action('LOGOUT', $u['name'] . ' logged out', !empty($u['isAdmin']) ? null : $u['id']);
         }
