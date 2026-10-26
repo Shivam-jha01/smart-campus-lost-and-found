@@ -88,19 +88,21 @@ class Database {
         // 2. MySQL Connection (Railway / Localhost / TiDB Cloud)
         $this->driver = 'mysql';
 
-        if ($databaseUrl && strpos($databaseUrl, 'mysql://') === 0) {
-            $parts = parse_url($databaseUrl);
+        $mysqlUrl = getenv('MYSQL_URL') ?: getenv('MYSQL_PUBLIC_URL') ?: ($databaseUrl && strpos($databaseUrl, 'mysql://') === 0 ? $databaseUrl : null);
+
+        if ($mysqlUrl) {
+            $parts = parse_url($mysqlUrl);
             $host = $parts['host'] ?? 'localhost';
             $port = (int)($parts['port'] ?? 3306);
-            $dbname = ltrim($parts['path'] ?? 'lost_found', '/');
+            $dbname = ltrim($parts['path'] ?? 'railway', '/');
             $username = isset($parts['user']) ? urldecode($parts['user']) : 'root';
             $password = isset($parts['pass']) ? urldecode($parts['pass']) : '';
         } else {
-            $host = getenv('MYSQLHOST') ?: 'localhost';
-            $port = (int)(getenv('MYSQLPORT') ?: 3306);
-            $dbname = getenv('MYSQLDATABASE') ?: 'lost_found';
-            $username = getenv('MYSQLUSER') ?: 'root';
-            $password = getenv('MYSQLPASSWORD') ?: '';
+            $host = getenv('MYSQLHOST') ?: getenv('MYSQL_HOST') ?: 'localhost';
+            $port = (int)(getenv('MYSQLPORT') ?: getenv('MYSQL_PORT') ?: 3306);
+            $dbname = getenv('MYSQLDATABASE') ?: getenv('MYSQL_DATABASE') ?: 'railway';
+            $username = getenv('MYSQLUSER') ?: getenv('MYSQL_USER') ?: 'root';
+            $password = getenv('MYSQLPASSWORD') ?: getenv('MYSQL_PASSWORD') ?: '';
         }
 
         // Add SSL options for remote cloud MySQL
