@@ -3,9 +3,13 @@ let currentUser = null;
 let claimTargetId = null;
 
 async function api(action, data = {}) {
+  const token = localStorage.getItem('lf_token');
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
   const res = await fetch(`${API_URL}?action=${encodeURIComponent(action)}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(data)
   });
   const json = await res.json().catch(() => ({ ok: false, message: 'Invalid server response' }));
@@ -43,6 +47,7 @@ async function doLogin() {
   try {
     const r = await safeApi('login', { email, password, isAdmin });
     currentUser = r.user;
+    if (r.token) localStorage.setItem('lf_token', r.token);
     toast(currentUser.isAdmin ? 'Welcome, Admin!' : 'Welcome back, ' + currentUser.name.split(' ')[0] + '!');
     go(currentUser.isAdmin ? 'admin' : 'dashboard');
   } catch (e) {}
@@ -55,11 +60,17 @@ async function doRegister() {
   try {
     const r = await safeApi('register', { name, email, uid, dept, role, password });
     currentUser = r.user;
+    if (r.token) localStorage.setItem('lf_token', r.token);
     toast('Account created! Welcome, ' + name.split(' ')[0] + '!');
     go('dashboard');
   } catch (e) {}
 }
-async function logout() { try { await api('logout'); } catch (e) {} currentUser = null; go('landing'); }
+async function logout() {
+  try { await api('logout'); } catch (e) {}
+  localStorage.removeItem('lf_token');
+  currentUser = null;
+  go('landing');
+}
 
 async function submitLost() {
   if (!currentUser) return go('login');
