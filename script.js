@@ -28,12 +28,74 @@ async function api(action, data = {}) {
 async function safeApi(action, data = {}) { try { return await api(action, data); } catch (e) { toast(e.message, 'error'); throw e; } }
 async function loadSession() { try { currentUser = (await api('session')).user || null; } catch (e) { currentUser = null; } }
 
+function clearLoginForm() {
+  const email = document.getElementById('login-email');
+  if (email) email.value = '';
+  const pass = document.getElementById('login-password');
+  if (pass) {
+    pass.value = '';
+    pass.type = 'password';
+  }
+  const admin = document.getElementById('login-admin');
+  if (admin) admin.checked = false;
+  const toggle = document.querySelector('#page-login .password-toggle i');
+  if (toggle) toggle.className = 'fas fa-eye';
+}
+
+function clearRegisterForm() {
+  ['reg-name', 'reg-email', 'reg-id', 'reg-pass'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const dept = document.getElementById('reg-dept');
+  if (dept) dept.selectedIndex = 0;
+  const role = document.getElementById('reg-role');
+  if (role) role.value = 'student';
+  const pass = document.getElementById('reg-pass');
+  if (pass) {
+    pass.value = '';
+    pass.type = 'password';
+  }
+  const toggle = document.querySelector('#page-register .password-toggle i');
+  if (toggle) toggle.className = 'fas fa-eye';
+}
+
+function clearUserData() {
+  ['dash-name', 'stat-lost', 'stat-found', 'stat-claims', 'stat-total'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '0';
+  });
+  const dashName = document.getElementById('dash-name');
+  if (dashName) dashName.textContent = 'User';
+  const fList = document.getElementById('found-message-list');
+  if (fList) fList.innerHTML = '';
+  const myLost = document.getElementById('my-lost-body');
+  if (myLost) myLost.innerHTML = '';
+  const myFound = document.getElementById('my-found-body');
+  if (myFound) myFound.innerHTML = '';
+  const myClaims = document.getElementById('my-claims-body');
+  if (myClaims) myClaims.innerHTML = '';
+  const myMatches = document.getElementById('my-match-list');
+  if (myMatches) myMatches.innerHTML = '';
+  ['dash-avatar', 'rl-avatar', 'rf-avatar', 'br-avatar', 'mr-avatar'].forEach(id => {
+    const a = document.getElementById(id);
+    if (a) a.textContent = 'U';
+  });
+}
+
 async function go(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const el = document.getElementById('page-' + page);
   if (!el) return;
   el.classList.add('active');
   window.scrollTo(0, 0);
+
+  if (page === 'login') clearLoginForm();
+  if (page === 'register') clearRegisterForm();
+  if (page === 'landing' || page === 'login' || page === 'register') {
+    if (!currentUser) clearUserData();
+  }
+
   try {
     if (page === 'dashboard') await renderDashboard();
     if (page === 'browse') await renderBrowse();
@@ -57,6 +119,7 @@ async function doLogin() {
     const r = await safeApi('login', { email, password, isAdmin });
     currentUser = r.user;
     if (r.token) localStorage.setItem('lf_token', r.token);
+    clearLoginForm();
     toast(currentUser.isAdmin ? 'Welcome, Admin!' : 'Welcome back, ' + currentUser.name.split(' ')[0] + '!');
     go(currentUser.isAdmin ? 'admin' : 'dashboard');
   } catch (e) {}
@@ -70,6 +133,8 @@ async function doRegister() {
     const r = await safeApi('register', { name, email, uid, dept, role, password });
     currentUser = r.user;
     if (r.token) localStorage.setItem('lf_token', r.token);
+    clearRegisterForm();
+    clearLoginForm();
     toast('Account created! Welcome, ' + name.split(' ')[0] + '!');
     go('dashboard');
   } catch (e) {}
@@ -78,6 +143,10 @@ async function logout() {
   try { await api('logout'); } catch (e) {}
   localStorage.removeItem('lf_token');
   currentUser = null;
+  clearLoginForm();
+  clearRegisterForm();
+  clearUserData();
+  toast('Logged out successfully');
   go('landing');
 }
 
