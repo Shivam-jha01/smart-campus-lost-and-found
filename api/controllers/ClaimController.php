@@ -2,6 +2,7 @@
 /**
  * ClaimController
  * Manages claiming found items, verifying eligibility, and processing user submissions.
+ * Prevents duplicate pending claims and sanitizes verification details.
  */
 class ClaimController extends Controller {
     private FoundItem $foundModel;
@@ -24,6 +25,10 @@ class ClaimController extends Controller {
         $id = (int)$this->input('itemId', 0);
         $detailsOnly = (bool)$this->input('detailsOnly', false);
 
+        if ($id <= 0) {
+            $this->fail('Invalid item identifier', 400);
+        }
+
         $item = $this->foundModel->findById($id);
         if (!$item) {
             $this->fail('Item not found', 404);
@@ -45,10 +50,22 @@ class ClaimController extends Controller {
     public function submitClaim(): void {
         $u = $this->requireUser();
         $id = (int)$this->input('itemId', 0);
-        $details = (string)$this->input('details', '');
+        $details = strip_tags(trim((string)$this->input('details', '')));
+
+        if ($id <= 0) {
+            $this->fail('Invalid item identifier', 400);
+        }
 
         if (!$details) {
             $this->fail('Please provide claim details');
+        }
+
+        if (strlen($details) < 5) {
+            $this->fail('Please provide more detailed proof of ownership (minimum 5 characters)');
+        }
+
+        if (strlen($details) > 2000) {
+            $this->fail('Claim details text is too long (maximum 2000 characters)');
         }
 
         if (!empty($u['isAdmin'])) {
@@ -58,6 +75,11 @@ class ClaimController extends Controller {
         $item = $this->foundModel->findById($id);
         if (!$item || $item['status'] !== 'Available') {
             $this->fail('This item is no longer available for claiming');
+        }
+
+        // Prevent duplicate concurrent claims by the same user
+        if ($this->claimModel->hasPending($id, (int)$u['id'])) {
+            $this->fail('You already have a pending claim for this item awaiting admin review.');
         }
 
         $linkedLostId = null;

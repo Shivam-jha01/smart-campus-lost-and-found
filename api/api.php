@@ -4,20 +4,12 @@
  * Bootstraps autoloader, initializes database, registers routes, and dispatches HTTP requests.
  */
 
-// 1. Setup CORS headers
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-header('Content-Type: application/json; charset=utf-8');
-
-if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
-    http_response_code(204);
-    exit;
-}
-
-// 2. Register Autoloader
+// 1. Register Autoloader
 require_once __DIR__ . '/core/Autoloader.php';
 Autoloader::register();
+
+// 2. Setup Security headers and CORS
+Response::setupCors();
 
 // 3. Connect to Database & verify schema
 try {

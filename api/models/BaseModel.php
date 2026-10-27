@@ -2,6 +2,7 @@
 /**
  * Base Model Class
  * Provides common database interaction methods and PostgreSQL RETURNING helpers.
+ * Validates table and column identifiers to protect against identifier injection.
  */
 abstract class BaseModel {
     protected PDO $pdo;
@@ -10,8 +11,19 @@ abstract class BaseModel {
         $this->pdo = $pdo;
     }
 
+    protected function validateIdentifier(string $name, string $type = 'column'): void {
+        if (!preg_match('/^[a-z_][a-z0-9_]*$/i', $name)) {
+            throw new InvalidArgumentException("Invalid {$type} identifier: {$name}");
+        }
+    }
+
     protected function insert(string $table, array $data): int {
+        $this->validateIdentifier($table, 'table');
         $cols = array_keys($data);
+        foreach ($cols as $col) {
+            $this->validateIdentifier($col, 'column');
+        }
+
         $fields = implode(', ', $cols);
         $placeholders = implode(', ', array_fill(0, count($cols), '?'));
         
@@ -22,9 +34,11 @@ abstract class BaseModel {
     }
 
     protected function update(string $table, array $data, string $where, array $whereParams = []): bool {
+        $this->validateIdentifier($table, 'table');
         $sets = [];
         $values = [];
         foreach ($data as $col => $val) {
+            $this->validateIdentifier($col, 'column');
             $sets[] = "{$col} = ?";
             $values[] = $val;
         }
@@ -35,6 +49,7 @@ abstract class BaseModel {
     }
 
     protected function delete(string $table, string $where, array $whereParams = []): bool {
+        $this->validateIdentifier($table, 'table');
         $sql = "DELETE FROM {$table} WHERE {$where}";
         $st = $this->pdo->prepare($sql);
         return $st->execute($whereParams);

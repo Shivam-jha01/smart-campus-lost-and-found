@@ -41,8 +41,10 @@ class Router {
             if ($e->getCode() === '23000' || $e->getCode() === '23505') {
                 Response::fail('Duplicate entry. This email or ID may already be registered.', 409);
             }
-            Response::fail('Database error: ' . $e->getMessage(), 500);
+            error_log('Database query exception: ' . $e->getMessage());
+            Response::fail('A database error occurred. Please try again later.', 500);
         } catch (Throwable $e) {
+            error_log('Application exception: ' . $e->getMessage());
             Response::fail($e->getMessage(), 500);
         }
     }

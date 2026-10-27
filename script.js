@@ -283,10 +283,21 @@ function fileToBase64(inputId) {
   });
 }
 function itemImage(item, className = 'item-proof-image') {
-  return item && item.imagePath ? `<img class="${className}" src="${esc(item.imagePath)}" alt="${esc(item.itemName || 'Item image')}">` : '';
+  if (!item || !item.imagePath) return '';
+  const src = String(item.imagePath).trim();
+  if (!src.startsWith('uploads/') && !src.startsWith('data:image/')) return '';
+  return `<img class="${className}" src="${esc(src)}" alt="${esc(item.itemName || 'Item image')}">`;
 }
 function v(id) { const el = document.getElementById(id); return el ? el.value : ''; }
-function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s) {
+  if (!s) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function switchTab(btn, tabId) {

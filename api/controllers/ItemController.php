@@ -2,6 +2,7 @@
 /**
  * ItemController
  * Manages item browsing, reporting lost and found items, retrieving user reports, and deletions.
+ * Enforces input sanitization, category validation, and text bounds.
  */
 class ItemController extends Controller {
     private LostItem $lostModel;
@@ -10,6 +11,10 @@ class ItemController extends Controller {
     private MatchNotification $matchNotificationModel;
     private AuditLog $auditLog;
     private MatchService $matchService;
+
+    private const VALID_CATEGORIES = [
+        'Phone', 'Wallet', 'Bag', 'Laptop', 'Books', 'USB Drive', 'Keys', 'ID Card', 'Others'
+    ];
 
     public function __construct(Request $request, PDO $pdo) {
         parent::__construct($request, $pdo);
@@ -22,9 +27,13 @@ class ItemController extends Controller {
     }
 
     public function browse(): void {
-        $category = (string)$this->input('category', '');
-        $status = (string)$this->input('status', '');
-        $search = (string)$this->input('search', '');
+        $category = strip_tags(trim((string)$this->input('category', '')));
+        $status = strip_tags(trim((string)$this->input('status', '')));
+        $search = strip_tags(trim((string)$this->input('search', '')));
+
+        if (strlen($search) > 100) {
+            $search = substr($search, 0, 100);
+        }
 
         $items = $this->foundModel->search([
             'category' => $category,
@@ -37,17 +46,43 @@ class ItemController extends Controller {
 
     public function submitLost(): void {
         $u = $this->requireUser();
-        $name = (string)$this->input('itemName', '');
-        $cat = (string)$this->input('category', '');
-        $date = (string)$this->input('dateLost', '');
-        $loc = (string)$this->input('location', '');
+        $name = strip_tags(trim((string)$this->input('itemName', '')));
+        $cat = trim((string)$this->input('category', ''));
+        $date = trim((string)$this->input('dateLost', ''));
+        $loc = strip_tags(trim((string)$this->input('location', '')));
+        $desc = strip_tags(trim((string)$this->input('description', '')));
+        $keywords = strip_tags(trim((string)$this->input('keywords', '')));
 
         if (!$name || !$cat || !$date || !$loc) {
             $this->fail('Please fill all required fields');
         }
 
+        if (strlen($name) < 2 || strlen($name) > 150) {
+            $this->fail('Item name must be between 2 and 150 characters');
+        }
+
+        if (!in_array($cat, self::VALID_CATEGORIES, true)) {
+            $this->fail('Invalid category selected');
+        }
+
+        if (strlen($loc) < 2 || strlen($loc) > 150) {
+            $this->fail('Location must be between 2 and 150 characters');
+        }
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $this->fail('Invalid date format. Use YYYY-MM-DD');
+        }
+
+        if (strlen($desc) > 2000) {
+            $this->fail('Description is too long (maximum 2000 characters)');
+        }
+
+        if (strlen($keywords) > 500) {
+            $this->fail('Keywords string is too long (maximum 500 characters)');
+        }
+
         if ($this->lostModel->exists((int)$u['id'], $name, $cat)) {
-            $this->fail('Item is already registered.');
+            $this->fail('You have already registered an active lost report for this item.');
         }
 
         $imagePath = ImageService::save($this->input('imageData'), 'lost');
@@ -57,8 +92,8 @@ class ItemController extends Controller {
             'user_name' => $u['name'],
             'item_name' => $name,
             'category' => $cat,
-            'description' => (string)$this->input('description', ''),
-            'keywords' => (string)$this->input('keywords', ''),
+            'description' => $desc,
+            'keywords' => $keywords,
             'image_path' => $imagePath,
             'date_lost' => $date,
             'location' => $loc
@@ -70,8 +105,8 @@ class ItemController extends Controller {
             'user_name' => $u['name'],
             'item_name' => $name,
             'category' => $cat,
-            'description' => (string)$this->input('description', ''),
-            'keywords' => (string)$this->input('keywords', ''),
+            'description' => $desc,
+            'keywords' => $keywords,
             'image_path' => $imagePath,
             'date_lost' => $date,
             'location' => $loc,
@@ -99,13 +134,39 @@ class ItemController extends Controller {
 
     public function submitFound(): void {
         $u = $this->requireUser();
-        $name = (string)$this->input('itemName', '');
-        $cat = (string)$this->input('category', '');
-        $date = (string)$this->input('dateFound', '');
-        $loc = (string)$this->input('location', '');
+        $name = strip_tags(trim((string)$this->input('itemName', '')));
+        $cat = trim((string)$this->input('category', ''));
+        $date = trim((string)$this->input('dateFound', ''));
+        $loc = strip_tags(trim((string)$this->input('location', '')));
+        $desc = strip_tags(trim((string)$this->input('description', '')));
+        $keywords = strip_tags(trim((string)$this->input('keywords', '')));
 
         if (!$name || !$cat || !$date || !$loc) {
             $this->fail('Please fill all required fields');
+        }
+
+        if (strlen($name) < 2 || strlen($name) > 150) {
+            $this->fail('Item name must be between 2 and 150 characters');
+        }
+
+        if (!in_array($cat, self::VALID_CATEGORIES, true)) {
+            $this->fail('Invalid category selected');
+        }
+
+        if (strlen($loc) < 2 || strlen($loc) > 150) {
+            $this->fail('Location must be between 2 and 150 characters');
+        }
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $this->fail('Invalid date format. Use YYYY-MM-DD');
+        }
+
+        if (strlen($desc) > 2000) {
+            $this->fail('Description is too long (maximum 2000 characters)');
+        }
+
+        if (strlen($keywords) > 500) {
+            $this->fail('Keywords string is too long (maximum 500 characters)');
         }
 
         $imagePath = ImageService::save($this->input('imageData'), 'found');
@@ -115,8 +176,8 @@ class ItemController extends Controller {
             'user_name' => $u['name'],
             'item_name' => $name,
             'category' => $cat,
-            'description' => (string)$this->input('description', ''),
-            'keywords' => (string)$this->input('keywords', ''),
+            'description' => $desc,
+            'keywords' => $keywords,
             'image_path' => $imagePath,
             'date_found' => $date,
             'location' => $loc
@@ -128,8 +189,8 @@ class ItemController extends Controller {
             'user_name' => $u['name'],
             'item_name' => $name,
             'category' => $cat,
-            'description' => (string)$this->input('description', ''),
-            'keywords' => (string)$this->input('keywords', ''),
+            'description' => $desc,
+            'keywords' => $keywords,
             'image_path' => $imagePath,
             'date_found' => $date,
             'location' => $loc,

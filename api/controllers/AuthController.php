@@ -2,6 +2,7 @@
 /**
  * AuthController
  * Handles user and admin authentication, session checks, registration, and logout.
+ * Implements rate limiting, secure password hashing, and input validation.
  */
 class AuthController extends Controller {
     private User $userModel;
@@ -23,7 +24,7 @@ class AuthController extends Controller {
     }
 
     public function login(): void {
-        $email = strtolower((string)$this->input('email', ''));
+        $email = strtolower(trim((string)$this->input('email', '')));
         $pass = (string)$this->input('password', '');
         $isAdmin = (bool)$this->input('isAdmin', false);
 
@@ -31,15 +32,29 @@ class AuthController extends Controller {
             $this->fail('Please enter email and password');
         }
 
+        if (strlen($pass) > 128) {
+            $this->fail('Password exceeds maximum allowed length');
+        }
+
+        $this->checkRateLimit($email);
+
         if ($isAdmin) {
             $admin = $this->adminModel->findByEmail($email);
             if (!$admin) {
-                $this->fail('Admin credentials not found.');
+                $this->auditLog->log('LOGIN_FAILED', 'Failed admin login attempt for: ' . $email);
+                $this->fail('Invalid admin credentials.');
             }
 
-            $valid = password_verify($pass, $admin['password']) || $pass === $admin['password'];
+            $valid = password_verify($pass, $admin['password']);
+            if (!$valid && $pass === $admin['password']) {
+                $valid = true;
+                $newHash = password_hash($pass, PASSWORD_DEFAULT);
+                $this->pdo->prepare('UPDATE admins SET password = ? WHERE id = ?')->execute([$newHash, $admin['id']]);
+            }
+
             if (!$valid) {
-                $this->fail('Invalid admin password.');
+                $this->auditLog->log('LOGIN_FAILED', 'Failed admin login attempt for: ' . $email);
+                $this->fail('Invalid admin credentials.');
             }
 
             if (($admin['role'] ?? '') !== 'admin') {
@@ -57,12 +72,20 @@ class AuthController extends Controller {
 
         $user = $this->userModel->findByEmail($email);
         if (!$user) {
-            $this->fail('No account found with this email.');
+            $this->auditLog->log('LOGIN_FAILED', 'Failed user login attempt for: ' . $email);
+            $this->fail('Invalid email or password.');
         }
 
-        $valid = password_verify($pass, $user['password']) || $pass === $user['password'];
+        $valid = password_verify($pass, $user['password']);
+        if (!$valid && $pass === $user['password']) {
+            $valid = true;
+            $newHash = password_hash($pass, PASSWORD_DEFAULT);
+            $this->pdo->prepare('UPDATE users SET password = ? WHERE id = ?')->execute([$newHash, $user['id']]);
+        }
+
         if (!$valid) {
-            $this->fail('Invalid password.');
+            $this->auditLog->log('LOGIN_FAILED', 'Failed user login attempt for: ' . $email);
+            $this->fail('Invalid email or password.');
         }
 
         if (($user['status'] ?? 'active') !== 'active') {
@@ -78,23 +101,47 @@ class AuthController extends Controller {
     }
 
     public function register(): void {
-        $name = (string)$this->input('name', '');
-        $email = strtolower((string)$this->input('email', ''));
+        $name = strip_tags(trim((string)$this->input('name', '')));
+        $email = strtolower(trim((string)$this->input('email', '')));
         $pass = (string)$this->input('password', '');
-        $uid = (string)$this->input('uid', '');
-        $dept = (string)$this->input('dept', '');
-        $role = (string)$this->input('role', 'student');
+        $uid = trim((string)$this->input('uid', ''));
+        $dept = strip_tags(trim((string)$this->input('dept', '')));
+        $role = strtolower(trim((string)$this->input('role', 'student')));
 
         if (!$name || !$email || !$pass || !$uid || !$dept) {
-            $this->fail('Please fill all fields');
+            $this->fail('Please fill all required fields');
         }
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->fail('Invalid email format');
+        if (strlen($name) > 100) {
+            $this->fail('Name is too long (maximum 100 characters)');
+        }
+
+        if (strlen($email) > 120 || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->fail('Please provide a valid email address');
+        }
+
+        if (strlen($pass) < 6) {
+            $this->fail('Password must be at least 6 characters');
+        }
+
+        if (strlen($pass) > 128) {
+            $this->fail('Password is too long (maximum 128 characters)');
+        }
+
+        if (strlen($uid) > 50 || !preg_match('/^[a-z0-9\-]+$/i', $uid)) {
+            $this->fail('University ID must contain only alphanumeric characters and hyphens');
+        }
+
+        if (strlen($dept) > 100) {
+            $this->fail('Department name is too long (maximum 100 characters)');
+        }
+
+        if (!in_array($role, ['student', 'faculty', 'staff'], true)) {
+            $role = 'student';
         }
 
         if ($this->userModel->findByEmail($email) || $this->userModel->findByUid($uid)) {
-            $this->fail('Email or University ID already registered');
+            $this->fail('Email or University ID is already registered');
         }
 
         $hash = password_hash($pass, PASSWORD_DEFAULT);
@@ -136,5 +183,18 @@ class AuthController extends Controller {
         }
         Auth::destroySession();
         $this->ok();
+    }
+
+    private function checkRateLimit(string $email): void {
+        try {
+            $st = $this->pdo->prepare("SELECT COUNT(*) FROM audit_logs WHERE action = 'LOGIN_FAILED' AND description LIKE ? AND created_at > NOW() - INTERVAL '15 minutes'");
+            $st->execute(['%' . $email . '%']);
+            $failures = (int)$st->fetchColumn();
+            if ($failures >= 5) {
+                Response::fail('Too many failed login attempts. Please wait 15 minutes before trying again.', 429);
+            }
+        } catch (Throwable $e) {
+            // Ignore rate limit check exceptions so logins aren't blocked by log issues
+        }
     }
 }

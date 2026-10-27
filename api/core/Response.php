@@ -1,11 +1,33 @@
 <?php
 /**
  * HTTP Response Handler
- * Sends JSON responses with appropriate headers and status codes.
+ * Sends standardized JSON responses with security headers and CORS protection.
  */
 class Response {
     public static function setupCors(): void {
-        header('Access-Control-Allow-Origin: *');
+        // Enforce essential security headers
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: SAMEORIGIN');
+        header('Referrer-Policy: strict-origin-when-cross-origin');
+        header('Permissions-Policy: geolocation=(), camera=(), microphone=()');
+
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+
+        if (!empty($origin)) {
+            $parsed = parse_url($origin);
+            $originHost = $parsed['host'] ?? '';
+            // Allow same host, Vercel deployments, or local development
+            if ($originHost === $host || str_ends_with($originHost, '.vercel.app') || in_array($originHost, ['localhost', '127.0.0.1'], true)) {
+                header("Access-Control-Allow-Origin: {$origin}");
+                header('Access-Control-Allow-Credentials: true');
+            } else {
+                header('Access-Control-Allow-Origin: *');
+            }
+        } else {
+            header('Access-Control-Allow-Origin: *');
+        }
+
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
         header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
         header('Content-Type: application/json; charset=utf-8');
